@@ -1,3 +1,3 @@
-from PSX import exe
+from .PSX import exe
 
 exe.PSXView.register()
