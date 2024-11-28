@@ -16,7 +16,7 @@ from .find_bios_calls import run_plugin as find_bios_calls_run
 # Playstation memory map (mostly iomapped control registers)
 #
 # Whereever I know of a symbol name used within PSXDEV it is used, but
-# several addresses have no accociated symbol name, so in those cases
+# several addresses have no associated symbol name, so in those cases
 # I've invented one. Feel free to point out where I could use better
 # names.
 #
@@ -308,13 +308,11 @@ class PSXView(BinaryView):
     def init(self):
         try:
             hdr = self.parent_view.read(0, 0x800)
-            # Remember, Pythons indexer is retarded: from:(to+1)
             self.init_pc = struct.unpack("<L", hdr[0x10:0x14])[0]
             self.text_start = struct.unpack("<L", hdr[0x18:0x1c])[0]
             self.text_size = struct.unpack("<L", hdr[0x1c:0x20])[0]
             self.init_sp = struct.unpack("<L", hdr[0x30:0x34])[0]
             self.info = hdr[0x4c:self.HDR_SIZE]
-            # log_debug("/info: %r" % self.info)
             log_debug("/info size: %s" % format(len(self.info), '#010x'))
 
             log_info("PC:   %s" % format(self.init_pc,    '#010x'))
