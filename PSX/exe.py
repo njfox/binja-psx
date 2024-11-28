@@ -434,7 +434,7 @@ class PSXView(BinaryView):
             # c0-calls, those should be lifted in some
             # other manner but are useful enough that they
             # are hardcoded right now.
-            for addr, symbol in psx_memmap_constants.iteritems():
+            for addr, symbol in psx_memmap_constants.items():
                 self.define_auto_symbol(
                     Symbol(SymbolType.DataSymbol, addr, symbol))
 
