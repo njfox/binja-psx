@@ -300,7 +300,8 @@ class PSXView(BinaryView):
         hdr = data.read(0, self.HDR_SIZE)
         if len(hdr) < self.HDR_SIZE:
             return False
-        if hdr[0:8] != "PS-X EXE":
+        if hdr[0:8] != b"PS-X EXE":
+            log_info('false')
             return False
         log_info("PSX EXE identified")
         return True
