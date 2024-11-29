@@ -333,14 +333,14 @@ class PSXView(BinaryView):
             if (self.text_size > 0x800000):
                 log_warn("size > 8M: %d", self.text_size)
             if (self.text_size % 2048 != 0):
-                log_warn("size not divisable by 2k")
+                log_warn("size not divisible by 2k")
 
             text = self.parent_view.read(self.HDR_SIZE, self.text_size)
-            log_info("Actual size of aquired TEXT: %s" %
+            log_info("Actual size of acquired TEXT: %s" %
                      format(len(text), '#010x'))
             if (len(text) != self.text_size):
                 log_error(
-                    "Size of aquired data is not same as header-prescribed TEXT size. Truncated file?")
+                    "Size of acquired data is not same as header-prescribed TEXT size. Truncated file?")
 
             # add_auto_segment(start, length,
             #                  data_offset, data_length, flags)
