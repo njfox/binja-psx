@@ -305,6 +305,11 @@ class PSXView(BinaryView):
         log_info("PSX EXE identified")
         return True
 
+
+    def _get_address_size(self, ctxt):
+        return self.arch.address_size
+
+        
     def init(self):
         try:
             hdr = self.parent_view.read(0, 0x800)
