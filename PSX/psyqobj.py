@@ -64,6 +64,7 @@ class PsyqSection:
     group = 0
     alignment = 0
     name = ""
+    data = ""
 
 
 class PsyqImportedSymbol:
@@ -79,11 +80,23 @@ class PsyqExportedSymbol:
 
 
 class PsyqObjFile:
-    sections = []
-    imports = []
-    exports = []
-    #relocation
-    #expression
+    def __init__(self):
+        self.sections = {}
+        self.imports = []
+        self.exports = []
+        #relocation
+        #expression
+        self.current_section = 0xF001
+    
+    def set_section_data(self, index, data):
+        try:
+            self.sections[index].data = data
+        except:
+            log_error("Invalid section: {}".format(index))
+
+    def set_current_section_data(self, data):
+        self.set_section_data(self.current_section, data)
+
 
 
 class OBJView(BinaryView):
@@ -126,13 +139,17 @@ class OBJView(BinaryView):
             self.objFile.program_type = self.parse_program_type()
         elif opcode == PsyqOpcode.SECTION.value:
             section = self.parse_section()
-            self.objFile.sections.append(section)
+            self.objFile.sections[section.index] = section
         elif opcode == PsyqOpcode.IMPORTED_SYMBOL.value:
             symbol = self.parse_imported_symbol()
             self.objFile.imports.append(symbol)
         elif opcode == PsyqOpcode.EXPORTED_SYMBOL.value:
             symbol = self.parse_exported_symbol()
             self.objFile.exports.append(symbol)
+        elif opcode == PsyqOpcode.SWITCH.value:
+            self.objFile.current_section = self.parse_switch()
+        elif opcode == PsyqOpcode.BYTES.value:
+            self.objFile.set_current_section_data(self.parse_bytes())
 
     def parse_program_type(self):
         value = int.from_bytes(self.read_byte())
@@ -164,6 +181,14 @@ class OBJView(BinaryView):
         name_len = int.from_bytes(self.read_byte())
         symbol.name = self.read_bytes(name_len)
         return symbol
+
+    def parse_bytes(self):
+        size = struct.unpack("<H", self.read_word())[0]
+        return self.read_bytes(size)
+
+
+    def parse_switch(self):
+        return struct.unpack("<H", self.read_word())[0]
 
     def read_word(self):
         return self.read_bytes(2)
