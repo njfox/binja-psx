@@ -1,3 +1,4 @@
-from .PSX import exe
+from .PSX import exe, psyqobj
 
 exe.PSXView.register()
+psyqobj.OBJView.register()
