@@ -60,23 +60,34 @@ class PsyqExprOpcode(Enum):
 
 
 class PsyqSection:
-    index = 0
-    group = 0
-    alignment = 0
-    name = ""
-    data = ""
+    def __init__(self, index, group, alignment, name):
+        self.index = index
+        self.group = group
+        self.alignment = alignment
+        self.name = name
+        self.offset = 0
+        self.size = 0
+
+
+class PsyqRelocation:
+    def __init__(self):
+        self.reloc_type = 0
+        self.offset = 0
+        self.expression = ""
 
 
 class PsyqImportedSymbol:
-    index = 0
-    name = ""
+    def __init__(self, index, name):
+        self.index = index
+        self.name = name
 
 
 class PsyqExportedSymbol:
-    index = 0
-    section_index = 0
-    offset = 0
-    name = ""
+    def __init__(self, index, section_index, offset, name):
+        self.index = index
+        self.section_index = section_index
+        self.offset = offset
+        self.name = name
 
 
 class PsyqObjFile:
@@ -84,19 +95,12 @@ class PsyqObjFile:
         self.sections = {}
         self.imports = []
         self.exports = []
-        #relocation
+        self.relocations = []
         #expression
-        self.current_section = 0xF001
-    
-    def set_section_data(self, index, data):
-        try:
-            self.sections[index].data = data
-        except:
-            log_error("Invalid section: {}".format(index))
+        self.current_section = 0
 
-    def set_current_section_data(self, data):
-        self.set_section_data(self.current_section, data)
-
+    def get_current_section(self):
+        return self.sections[self.current_section]
 
 
 class OBJView(BinaryView):
@@ -149,7 +153,9 @@ class OBJView(BinaryView):
         elif opcode == PsyqOpcode.SWITCH.value:
             self.objFile.current_section = self.parse_switch()
         elif opcode == PsyqOpcode.BYTES.value:
-            self.objFile.set_current_section_data(self.parse_bytes())
+            self.parse_bytes()
+        elif opcode == PsyqOpcode.RELOCATION.value:
+            self.parse_relocation()
 
     def parse_program_type(self):
         value = int.from_bytes(self.read_byte())
@@ -158,37 +164,46 @@ class OBJView(BinaryView):
         return value
 
     def parse_section(self):
-        section = PsyqSection()
-        section.index = self.read_word()
-        section.group = self.read_word()
-        section.alignment = self.read_byte()
+        index = struct.unpack("<H", self.read_word())[0]
+        group = struct.unpack("<H", self.read_word())[0]
+        alignment = int.from_bytes(self.read_byte())
         name_len = int.from_bytes(self.read_byte())
-        section.name = self.read_bytes(name_len)
-        return section
+        name = self.read_bytes(name_len)
+        return PsyqSection(index, group, alignment, name)
 
     def parse_imported_symbol(self):
-        symbol = PsyqImportedSymbol()
-        symbol.index = self.read_word()
+        index = self.read_word()
         name_len = int.from_bytes(self.read_byte())
-        symbol.name = self.read_bytes(name_len)
-        return symbol
+        name = self.read_bytes(name_len)
+        return PsyqImportedSymbol(index, name)
 
     def parse_exported_symbol(self):
-        symbol = PsyqExportedSymbol()
-        symbol.index = self.read_word()
-        symbol.section_index = self.read_word()
-        symbol.offset = struct.unpack("<I", self.read_dword())[0]
+        index = self.read_word()
+        section_index = self.read_word()
+        offset = struct.unpack("<I", self.read_dword())[0]
         name_len = int.from_bytes(self.read_byte())
-        symbol.name = self.read_bytes(name_len)
-        return symbol
+        name = self.read_bytes(name_len)
+        return PsyqExportedSymbol(index, section_index, offset, name)
 
     def parse_bytes(self):
+        section = self.objFile.get_current_section()
         size = struct.unpack("<H", self.read_word())[0]
-        return self.read_bytes(size)
-
+        section.size = size
+        section.offset = self.index
+        self.read_bytes(size) # skipping the buffer and advancing the offset to the end of the section since we don't need to copy the bytes
 
     def parse_switch(self):
         return struct.unpack("<H", self.read_word())[0]
+
+    def parse_relocation(self):
+        foo1 = self.objFile.imports
+        foo2 = self.objFile.exports
+        foo3 = self.objFile.sections
+        foo4 = self.objFile.relocations
+        reloc = PsyqRelocation()
+        section = self.objFile.get_current_section()
+        reloc.reloc_type = int.from_bytes(self.read_byte())
+        reloc.offset = struct.unpack("<H", self.read_word())[0] + section.offset
 
     def read_word(self):
         return self.read_bytes(2)
