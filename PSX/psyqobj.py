@@ -196,10 +196,6 @@ class OBJView(BinaryView):
         return struct.unpack("<H", self.read_word())[0]
 
     def parse_relocation(self):
-        foo1 = self.objFile.imports
-        foo2 = self.objFile.exports
-        foo3 = self.objFile.sections
-        foo4 = self.objFile.relocations
         reloc = PsyqRelocation()
         section = self.objFile.get_current_section()
         reloc.reloc_type = int.from_bytes(self.read_byte())
